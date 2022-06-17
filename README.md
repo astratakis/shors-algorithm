@@ -1,1 +1,1 @@
-# shors-algorithm
+# Shors Algorithm
