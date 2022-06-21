@@ -1,1 +1,1 @@
-# Shors Algorithm
+# Shor's Algorithm
