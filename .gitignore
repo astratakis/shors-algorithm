@@ -1,1 +1,3 @@
 quantum
+__pycache__*
+*.log
