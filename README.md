@@ -4,6 +4,8 @@
 
 | Package | Version
 | --- | --- |
-| certifi | 2022.6.15 |
-| cffi | 1.15.0 |
-| charset-normalizer | 2.0.12 |
+| qiskit | 0.36.2 |
+| qiskit-aer | 0.10.4 |
+| qiskit-ibmq-provider | 0.19.1 |
+| qiskit-ignis | 0.7.1 |
+| qiskit-terra | 0.20.2 |
