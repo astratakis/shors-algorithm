@@ -2,6 +2,8 @@
 
 ## Installed Python Packages
 
+Python version: 3.10.5
+
 | Package | Version
 | --- | --- |
 | qiskit | 0.36.2 |
