@@ -1,6 +1,9 @@
 quantum
-__pycache__*
+__pycache__/
 *.log
 *.npy
 *.svg
 *.pyc
+*.yml
+*.png
+*.mp4
