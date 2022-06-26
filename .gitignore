@@ -1,3 +1,6 @@
 quantum
 __pycache__*
 *.log
+*.npy
+*.svg
+*.pyc
