@@ -7,3 +7,5 @@ __pycache__/
 *.yml
 *.png
 *.mp4
+*.tex
+*.aux
