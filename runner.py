@@ -1,43 +1,71 @@
-from qiskit import *
-from shor import Shor
-from qiskit.providers.aer import QasmSimulator
-import matplotlib.pyplot as plt
+from math import gcd
 
 
-import random as rand
-rand.seed(1)
 
-# ----------- <CONSTANTS> ----------- #
-p = 5
-q = 7
+from sympy import prime
 
-N = p*q
-a = rand.randint(2, N-1)
-a = 2
-# ----------------------------------- #
+# Generate 100 prime numbers
 
-print('Running Shor\'s algorithm for N:', N, 'and a:', a)
+num = 3
+total_primes = 0
 
-qc = Shor(N, a)
-print(qc.draw('text'))
+def isPrime(n: int) -> bool:
+    for i in range(2, n-1):
+        if n % i == 0:
+            return False
+    return True
 
-backend = QasmSimulator()
-backend_options = {'method': 'simulator'}
-job = execute(qc, backend, backend_options=backend_options, shots=20000, memory=True)
-job_result = job.result()
+primes = []
 
-memory = job_result.get_memory()
-memory.sort()
-counts = job_result.get_counts()
+while True:
+    if isPrime(num):
+        primes.append(num)
+        total_primes += 1
+    if total_primes == 20:
+        break
+    num += 1
 
-s = dict(reversed(sorted(counts.items(), key=lambda item : item[1])))
+a = 4
+init = 4
 
-new_memory = []
-for item in memory:
-    new_memory.append(int(item, 2))
+for i in range(total_primes-1):
+    for j in range(i+1, total_primes):
+        N = primes[i] * primes[j]
 
-print(new_memory)
+        a = 4
+        r = 1
 
-plt.figure(facecolor='white')
-plt.hist(new_memory, linewidth=1, orientation='vertical', stacked=False, rwidth=1, bins=200)
-plt.show()
+        while True:
+            a = (a * init) % N
+            r += 1
+            if a == 1:
+                break
+
+        original_r = r
+
+        even = False
+        if r % 2 == 1:
+            r += 1
+        else:
+            even = True
+        
+        if even:
+            p1 = 4**(r >> 1) - 1
+            p2 = 4**(r >> 1) + 1
+        else:
+            p1 = 4**(r >> 1) - 2
+            p2 = 4**(r >> 1) + 2
+
+        f1 = gcd(p1, N)
+        f2 = gcd(p2, N)
+
+        print(f1, f2)
+
+        if (f1 == primes[i] and f2 == primes[j]) or (f1 == primes[j] and f2 == primes[i]):
+            print('OK:', f1, f2)
+        else:
+            print('ERROR', '##############', even, 'r=', original_r)
+            print(primes[i], primes[j])
+            print('-------------------')
+
+        
