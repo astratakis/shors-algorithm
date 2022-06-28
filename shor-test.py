@@ -22,23 +22,3 @@ print('Running Shor\'s algorithm for N:', N, 'and a:', a)
 qc = Shor(N, a)
 print(qc.draw('text'))
 
-backend = QasmSimulator()
-backend_options = {'method': 'simulator'}
-job = execute(qc, backend, backend_options=backend_options, shots=20000, memory=True)
-job_result = job.result()
-
-memory = job_result.get_memory()
-memory.sort()
-counts = job_result.get_counts()
-
-s = dict(reversed(sorted(counts.items(), key=lambda item : item[1])))
-
-new_memory = []
-for item in memory:
-    new_memory.append(int(item, 2))
-
-#print(new_memory)
-
-plt.figure(facecolor='white')
-plt.hist(new_memory, linewidth=1, orientation='vertical', stacked=False, rwidth=1, bins=200)
-plt.show()
