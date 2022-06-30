@@ -1,5 +1,5 @@
 from qiskit import *
-from shor import Shor
+from adder import Shor
 from qiskit.providers.aer import QasmSimulator
 import matplotlib.pyplot as plt
 
