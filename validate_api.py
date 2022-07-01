@@ -1,3 +1,5 @@
+from fractions import Fraction
+from operator import ge
 from qiskit import ClassicalRegister, QuantumCircuit, execute
 from qiskit.providers.aer import QasmSimulator
 from math import gcd
@@ -378,49 +380,67 @@ def main():
     #verdict = test_modular_multiplier()
     #print_verdict(verdict, "Modular MULT gate", time.time() - start_time)
 
-    fast()
-    exit(0)
-
-    N = 7*11
-    a = 8
+    N = 11*3
+    a = 5
 
     circuit = shor_circuit(N, a)
 
-    print(circuit)
+    #print(circuit)
 
     backend = QasmSimulator()
     backend_options = {'method': 'simulator'}
-    job = execute(circuit, backend, backend_options=backend_options, shots=20000, memory=True)
+    job = execute(circuit, backend, backend_options=backend_options, shots=200, memory=True)
     job_result = job.result()
 
     counts = job_result.get_counts(circuit)
     memory = job_result.get_memory()
     memory.sort()
 
-    print(counts)
+    n = 2*len(bin(N)[2:])
 
-    memory_int = []
+    r_guesses = []
+
+    r_counts = {}
 
     for element in memory:
-        a = int(element, 2)
-        memory_int.append(a)
+        phase = int(element, 2) / (1 << n)
+        fr = Fraction(phase).limit_denominator(N)
+        r_guesses.append(fr.denominator)
+        
+        if not (fr.denominator in r_counts.keys()):
+            r_counts[fr.denominator] = 1
+        else:
+            r_counts[fr.denominator] += 1
 
-    plt.figure(facecolor='white')
-    plt.hist(memory_int, bins=1000)
-    plt.show()
-    
-def fast():
-    N = 15
-    a = 2
+    best_r_guess = -1
+    max = 0
 
-    circuit = shor_circuit(N, a)
+    print(r_counts)
 
-    print(circuit)
+    for key in r_counts.keys():
+        if r_counts.get(key) > max:
+            best_r_guess = key
+            max = r_counts.get(key)
 
-    simulator = Aer.get_backend('aer_simulator_unitary')
-    simulator.set_options(precision='single', device='GPU')
 
-    result = simulator.run(circuit).result()
+    print('Best guess for r:', best_r_guess)
+
+    # Then make sure that r is even
+    if best_r_guess % 2 == 1:
+        print('Invalid result: r is not even')
+        exit(1)
+
+    p = a**(best_r_guess >> 1) + 1
+    q = a**(best_r_guess >> 1) - 1
+
+    p = gcd(p, N)
+    q = gcd(q, N)
+
+    if p == 1 or q == 1:
+        print('Bad guess, try again...')
+        exit(1)
+
+    print("Factors: %i = %i * %i" %(N, p, q))
     
     
 def assertEqual(arg1, arg2) -> bool:
