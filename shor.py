@@ -1,5 +1,5 @@
-from qiskit import ClassicalRegister, QiskitError, QuantumCircuit
-from qiskit.providers.aer import AerSimulator, AerError
+from qiskit import ClassicalRegister, QuantumCircuit
+from qiskit.providers.aer import AerSimulator
 
 from quantum_fourier_transform import qft, qft_dagger
 
