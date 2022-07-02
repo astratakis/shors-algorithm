@@ -1,6 +1,5 @@
-from qiskit import ClassicalRegister, QuantumCircuit
+from qiskit import ClassicalRegister, QiskitError, QuantumCircuit
 from qiskit.providers.aer import AerSimulator, AerError
-from zmq import device
 
 from quantum_fourier_transform import qft, qft_dagger
 
@@ -150,13 +149,13 @@ if __name__ == "__main__":
 
     qc = shor_circuit(N, a)
     print(qc)
-    
 
-    simulator = AerSimulator(provider='unitary_gpu')
-    simulator.set_options(device='GPU')
-    try:
+    if 'GPU' in AerSimulator().available_devices():
+        simulator = AerSimulator(provider='unitary_gpu')
+        simulator.set_options(device='GPU')
         result = simulator.run(qc.decompose(), memory=True, shots=20000).result()
-    except AerError:
+    else:
+        print('[FAILED] to run simulation on GPU... Trying again on CPU...')
         simulator = AerSimulator(provider='unitary')
         simulator.set_options(device='CPU')
         result = simulator.run(qc.decompose(), memory=True, shots=20000).result()
