@@ -1,7 +1,7 @@
 from qiskit import QuantumCircuit
+from qiskit.providers.aer import AerSimulator
 from numpy import pi
 
-from qiskit.providers.aer import AerSimulator
 
 def qft_rotations(circuit: QuantumCircuit, n: int):
     """Performs qft on the first n qubits in circuit (without swaps)"""
@@ -37,6 +37,13 @@ if __name__ == "__main__":
     # ----------------------------------- #
 
     qc = qft(n)
-    
+    qc.measure_all()
+
     simulator = AerSimulator()
-    print(simulator.available_devices())
+    simulator.set_options(device='GPU')
+    result = simulator.run(qc, memory=True, shots=1).result()
+
+    memory = result.get_memory()
+
+    print(memory)
+    
