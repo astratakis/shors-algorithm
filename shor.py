@@ -1,9 +1,14 @@
-from qiskit import QuantumCircuit
-from numpy import pi
-
-from qiskit.providers.aer import AerSimulator
+from qiskit import ClassicalRegister, QuantumCircuit
+from qiskit.providers.aer import AerSimulator, AerError
+from zmq import device
 
 from quantum_fourier_transform import qft, qft_dagger
+
+import matplotlib.pyplot as plt
+
+from numpy import pi
+from math import gcd
+from fractions import Fraction
 
 def theta(index: int) -> float:
     return 2 * pi / (2**index)
@@ -45,27 +50,176 @@ def fourier_adder(a: int, n: int) -> QuantumCircuit:
 def fourier_subtractor(a: int, n: int) -> QuantumCircuit:
     return fourier_adder(a, n).inverse()
 
-def adder(a: int, n: int) -> QuantumCircuit:
-    circuit = QuantumCircuit(n+1)
-    circuit.append(fourier_adder(a, n+1), range(n+1))
+def cc_modular_adder(a: int, n: int, N: int) -> QuantumCircuit:
+    
+    circuit = QuantumCircuit(n+4)
+    
+    circuit.append(fourier_adder(a, n+1).control(num_ctrl_qubits=2).decompose(), [0, 1] + [i+2 for i in range(n+1)])
+    circuit.append(fourier_subtractor(N, n+1), [i+2 for i in range(n+1)])
+    circuit.append(qft_dagger(n+1), [i+2 for i in range(n+1)])
+    circuit.cx(n+2, n+3)
+    circuit.append(qft(n+1), [i+2 for i in range(n+1)])
+    circuit.append(fourier_adder(N, n+1).control(num_ctrl_qubits=1).decompose(), [n+3] + [i+2 for i in range(n+1)])
+    circuit.append(fourier_subtractor(a, n+1).control(num_ctrl_qubits=2).decompose(), [0, 1] + [i+2 for i in range(n+1)])
+    circuit.append(qft_dagger(n+1), [i+2 for i in range(n+1)])
+    circuit.x(n+2)
+    circuit.cx(n+2, n+3)
+    circuit.x(n+2)
+    circuit.append(qft(n+1), [i+2 for i in range(n+1)])
+    circuit.append(fourier_adder(a, n+1).control(num_ctrl_qubits=2).decompose(), [0, 1] + [i+2 for i in range(n+1)])
     return circuit
+
+def cc_modular_subtractor(a: int, n: int, N: int) -> QuantumCircuit:
+    return cc_modular_adder(a, n, N).inverse()
+
+def c_modular_multiplier(a: int, n: int, N: int) -> QuantumCircuit:
+    
+    circuit = QuantumCircuit(2*n + 3)
+
+    circuit.append(qft(n+1), [1+n+i for i in range(n+1)])
+    for i in range(n):
+        circuit.append(cc_modular_adder((a * (1 << i)) % N, n, N).decompose(), [0, i+1] + [n+1+j for j in range(n+2)])
+
+    circuit.append(qft_dagger(n+1), [1+n+i for i in range(n+1)])
+
+    return circuit
+
+def n_swap(n: int) -> QuantumCircuit:
+    circuit = QuantumCircuit(n)
+
+    for i in range(n >> 1):
+        circuit.swap(i, i + (n >> 1))
+
+    return circuit
+
+def conditional_oracle(a: int, inv_a: int, n: int, N: int) -> QuantumCircuit:
+    
+    circuit = QuantumCircuit(2*n + 3)
+
+    circuit.append(c_modular_multiplier(a, n, N).decompose(), range(2*n + 3))
+    circuit.append(n_swap(2*n).control(num_ctrl_qubits=1).decompose(), [0] + [i+1 for i in range(2*n)])
+    circuit.append(c_modular_multiplier(inv_a, n, N).inverse().decompose(), range(2*n + 3))
+    
+    return circuit
+
+def shor_circuit(N: int, a: int) -> QuantumCircuit:
+    n = len(bin(N)[2:])
+
+    circuit = QuantumCircuit(4*n + 2)
+    result = ClassicalRegister(2*n, name="result")
+    #remainder = ClassicalRegister(n+1, name="remainder")
+    #flag = ClassicalRegister(1, name="flag")
+
+    circuit.add_register(result)
+
+    for i in range(2*n):
+        circuit.h(i)
+    circuit.x(2*n)
+
+    for i in range(2*n):
+        alpha = (a**(1 << i)) % N
+        inv_alpha = calculate_inverse_mod_n(alpha, N)
+        circuit.append(conditional_oracle(alpha, inv_alpha, n, N).decompose(), [i] + [2*n+i for i in range(2*n+2)])
+
+    circuit.append(qft_dagger(2*n), range(2*n))
+
+    circuit.barrier()
+    circuit.measure(range(2*n), result)
+
+    return circuit
+
+
+def calculate_inverse_mod_n(alpha: int, N: int) -> int:
+    if alpha == 0:
+        return 0
+
+    num = 1
+
+    while True:
+
+        if (alpha * num) % N == 1:
+            return num
+        num += 1
 
 if __name__ == "__main__":
     # ----------- <VARIABLES> ----------- #
     N = 15
     n = len(bin(N)[2:])
+    a = 4
     # ----------------------------------- #
 
-    qc = QuantumCircuit(n, )
-    qc = adder(2, n)
-    qc.measure_all()
-
+    qc = shor_circuit(N, a)
     print(qc)
+    
 
-    simulator = AerSimulator()
+    simulator = AerSimulator(provider='unitary_gpu')
     simulator.set_options(device='GPU')
-    result = simulator.run(qc, memory=True, shots=1).result()
+    try:
+        result = simulator.run(qc.decompose(), memory=True, shots=20000).result()
+    except AerError:
+        simulator = AerSimulator(provider='unitary')
+        simulator.set_options(device='CPU')
+        result = simulator.run(qc.decompose(), memory=True, shots=20000).result()
 
     memory = result.get_memory()
+    memory.sort()
 
-    print(memory)
+    counts = result.get_counts()
+
+    memory_int = []
+
+    for element in memory:
+        memory_int.append(int(element, 2))
+
+
+    r_guesses = []
+
+    r_counts = {}
+
+    for element in memory:
+        phase = int(element, 2) / (1 << (2*n))
+        fr = Fraction(phase).limit_denominator(N)
+        r_guesses.append(fr.denominator)
+
+        if not (fr.denominator in r_counts.keys()):
+            r_counts[fr.denominator] = 1
+        else:
+            r_counts[fr.denominator] += 1
+
+    best_r_guess = -1
+    max = 0
+
+    for key in r_counts.keys():
+        if r_counts.get(key) > max:
+            best_r_guess = key
+            max = r_counts.get(key)
+
+
+    plt.figure(facecolor='white')
+    plt.hist(memory_int, bins=500)
+    plt.show()
+
+    plt.figure(facecolor='white')
+    plt.hist(r_guesses, bins=500)
+    plt.show()
+
+    print('Best guess for r:', best_r_guess)
+
+    # Then make sure that r is even
+    if best_r_guess % 2 == 1:
+        print('Invalid result: r is not even')
+        exit(1)
+
+    p = a**(best_r_guess >> 1) + 1
+    q = a**(best_r_guess >> 1) - 1
+
+    p = gcd(p, N)
+    q = gcd(q, N)
+
+    if p == 1 or q == 1:
+        print('Bad guess, try again...')
+        exit(1)
+
+    print("Factors: %i = %i * %i" %(N, p, q))
+
+    
