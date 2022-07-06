@@ -9,3 +9,4 @@ __pycache__/
 *.mp4
 *.tex
 *.aux
+*.tmp
