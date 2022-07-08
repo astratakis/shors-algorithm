@@ -1,4 +1,4 @@
-from qiskit import ClassicalRegister, QuantumCircuit
+from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.aer import AerSimulator
 
 from quantum_fourier_transform import qft, qft_dagger
@@ -127,6 +127,38 @@ def shor_circuit(N: int, a: int) -> QuantumCircuit:
 
     return circuit
 
+def plot_shor_circuit(N: int, a: int):
+    n = len(bin(N)[2:])
+
+    couting_registers = QuantumRegister(2*n, name="cnt")
+    aux_registers = QuantumRegister(2*n+2, name="aux")
+    result = ClassicalRegister(2*n, name="res")
+
+    circuit = QuantumCircuit(couting_registers, aux_registers, result)
+
+    for i in range(2*n):
+        circuit.h(i)
+    circuit.x(2*n)
+
+    for i in range(2*n):
+        U = QuantumCircuit(2*n+2)
+
+        gate = U.to_gate(label=r'$%i^{%i}$ mod N' %(a, 1 << i))
+        gate = gate.control()
+
+        circuit.append(gate, [i] + [2*n+i for i in range(2*n+2)])
+    
+    qft = QuantumCircuit(2*n)
+
+    circuit.append(qft.to_gate(label=r'QFT$\dagger$'), range(2*n))
+
+    circuit.measure(range(2*n), result)
+
+    figure = circuit.draw('mpl', fold=-1)
+    name = "images/shor_circuit_" + str(N) + "_" + str(a)
+    figure.savefig(name, dpi=600)
+
+
 
 def calculate_inverse_mod_n(alpha: int, N: int) -> int:
     if alpha == 0:
@@ -142,10 +174,12 @@ def calculate_inverse_mod_n(alpha: int, N: int) -> int:
 
 if __name__ == "__main__":
     # ----------- <VARIABLES> ----------- #
-    N = 15
+    N = 21
     n = len(bin(N)[2:])
-    a = 4
+    a = 8
     # ----------------------------------- #
+
+    plot_shor_circuit(N, a)
 
     qc = shor_circuit(N, a)
     print(qc)
