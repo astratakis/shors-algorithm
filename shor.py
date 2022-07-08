@@ -174,9 +174,9 @@ def calculate_inverse_mod_n(alpha: int, N: int) -> int:
 
 if __name__ == "__main__":
     # ----------- <VARIABLES> ----------- #
-    N = 55
+    N = 13*7
     n = len(bin(N)[2:])
-    a = 6
+    a = 3
     # ----------------------------------- #
 
     plot_shor_circuit(N, a)
