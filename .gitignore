@@ -5,7 +5,6 @@ __pycache__/
 *.svg
 *.pyc
 *.yml
-*.png
 *.mp4
 *.tex
 *.aux
