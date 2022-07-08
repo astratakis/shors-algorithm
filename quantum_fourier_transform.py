@@ -34,9 +34,14 @@ def qft_dagger(n: int) -> QuantumCircuit:
 if __name__ == "__main__":
 
     # ----------- <VARIABLES> ----------- #
-    n = 3
-    init_state = 4
+    n = 4
+    init_state = 0
     # ----------------------------------- #
+
+    qc = qft(n)
+    qc.draw('mpl').savefig("example_qft")
+    exit()
+    
 
     qc = QuantumCircuit(n)
 
@@ -49,7 +54,9 @@ if __name__ == "__main__":
 
     qc.append(qft(n).decompose(), range(n))
     
-    print(qc)
+    qc.draw('mpl').savefig("example_qft")
+    exit()
+
 
     simulator = AerSimulator()
     simulator.set_options(device='GPU')
