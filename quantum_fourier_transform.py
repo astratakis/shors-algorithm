@@ -4,6 +4,8 @@ from numpy import pi
 
 from qiskit.visualization import *
 
+import matplotlib.pyplot as plt
+
 
 def qft_rotations(circuit: QuantumCircuit, n: int):
     """Performs qft on the first n qubits in circuit (without swaps)"""
@@ -34,14 +36,12 @@ def qft_dagger(n: int) -> QuantumCircuit:
 if __name__ == "__main__":
 
     # ----------- <VARIABLES> ----------- #
-    n = 4
+    n = 5
     init_state = 0
     # ----------------------------------- #
 
-    qc = qft(n)
-    qc.draw('mpl').savefig("example_qft")
-    exit()
-    
+    qft_circuit = qft(n)
+    qft_circuit.draw('mpl', fold=-1).savefig("example_qft_" + str(n), dpi=400)
 
     qc = QuantumCircuit(n)
 
@@ -51,20 +51,33 @@ if __name__ == "__main__":
         if binary[i] == '1':
            qc.x(i)
 
-
     qc.append(qft(n).decompose(), range(n))
-    
-    qc.draw('mpl').savefig("example_qft")
-    exit()
+    qc = qc.decompose()
 
+    qc.save_statevector()
 
     simulator = AerSimulator()
-    simulator.set_options(device='GPU')
-    result = simulator.run(qc, memory=True, shots=1).result()
+    simulator.set_options(device='CPU')
+    result = simulator.run(qc.decompose(), memory=True, shots=1).result()
 
-    figure = plot_state_qsphere(qc)
-    figure.savefig("figure_qft_" + str(n) + "_" + str(init_state), dpi=1000)
+    #figure = plot_state_qsphere(qc)
+    #figure.savefig("figure_qft_" + str(n) + "_" + str(init_state), dpi=200)
 
-    bloch = plot_bloch_multivector(qc)
-    bloch.savefig("multivector_qft_" + str(n) + "_" + str(init_state), dpi=1000)
+    #bloch = plot_bloch_multivector(qc)
+    #bloch.savefig("multivector_qft_" + str(n) + "_" + str(init_state), dpi=200)
+
+    sv = result.get_statevector(qc)
+
+    print(sv)
+
+    array = []
+
+    for i in range(len(sv)):
+        element = sv[i]
+        array.append((i, pow(element, 2).real))
+    print(array)
+
     
+    plt.figure(facecolor='white')
+    plt.hist(array)
+    plt.show()

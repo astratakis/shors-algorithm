@@ -174,9 +174,9 @@ def calculate_inverse_mod_n(alpha: int, N: int) -> int:
 
 if __name__ == "__main__":
     # ----------- <VARIABLES> ----------- #
-    N = 13*7
+    N = 55
     n = len(bin(N)[2:])
-    a = 3
+    a = 17
     # ----------------------------------- #
 
     plot_shor_circuit(N, a)
@@ -254,5 +254,33 @@ if __name__ == "__main__":
         exit(1)
 
     print("Factors: %i = %i * %i" %(N, p, q))
+
+    file = open("data.txt", "w")
+    for key in result.get_counts():
+        file.write(str(int(key, 2)) + " " + str(result.get_counts().get(key)) + "\n")
+    file.close()
+
+    hash_set = set()
+    max = 0
+
+    counts = result.get_counts()
+
+    modified_file = open("modified.txt", "w")
+    for key in counts:
+        number = int(key, 2)
+        hash_set.add(number)
+        if number > max:
+            max = number
+
+        modified_file.write(str(number) + ";" + str(counts.get(key)) + "\n")
+    
+    for i in range(max):
+        if i not in hash_set:
+            modified_file.write(str(i) + ";" + "0\n")
+    modified_file.close()
+
+
+
+
 
     
