@@ -174,12 +174,12 @@ def calculate_inverse_mod_n(alpha: int, N: int) -> int:
 
 if __name__ == "__main__":
     # ----------- <VARIABLES> ----------- #
-    N = 221
+    N = 15
     n = len(bin(N)[2:])
     a = 2
     # ----------------------------------- #
 
-    plot_shor_circuit(N, a)
+    #plot_shor_circuit(N, a)
 
     qc = shor_circuit(N, a)
     print(qc)
@@ -228,13 +228,13 @@ if __name__ == "__main__":
             max = r_counts.get(key)
 
 
-    plt.figure(facecolor='white')
-    plt.hist(memory_int, bins=500)
-    plt.show()
+    #plt.figure(facecolor='white')
+    #plt.hist(memory_int, bins=500)
+    #plt.show()
 
-    plt.figure(facecolor='white')
-    plt.hist(r_guesses, bins=500)
-    plt.show()
+    #plt.figure(facecolor='white')
+    #plt.hist(r_guesses, bins=500)
+    #plt.show()
 
     print('Best guess for r:', best_r_guess)
 
